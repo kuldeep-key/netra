@@ -1,0 +1,62 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {"type": "loki", "uid": "netra-loki"},
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "id": 1,
+      "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+      "targets": [{"datasource": {"type": "loki", "uid": "netra-loki"}, "expr": "sum(count_over_time({service_name=\"frontend\", environment=~\"$environment\"} |= \"\"[$__interval]))", "refId": "A"}],
+      "title": "RUM events (interval)",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "netra-loki"},
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "id": 2,
+      "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+      "targets": [{"datasource": {"type": "loki", "uid": "netra-loki"}, "expr": "sum(count_over_time({service_name=\"frontend\", environment=~\"$environment\", level=\"error\"}[$__interval]))", "refId": "A"}],
+      "title": "Frontend errors (interval)",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "tempo", "uid": "netra-tempo"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "id": 3,
+      "options": {},
+      "targets": [{"datasource": {"type": "tempo", "uid": "netra-tempo"}, "queryType": "traceqlSearch", "filters": [{"id": "service-name", "tag": "service.name", "operator": "=", "value": ["frontend"], "scope": "resource"}], "refId": "A", "limit": 20}],
+      "title": "Recent frontend traces",
+      "type": "table"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "netra-loki"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "id": 4,
+      "options": {"showTime": true, "wrapLogMessage": true, "dedupStrategy": "none"},
+      "targets": [{"datasource": {"type": "loki", "uid": "netra-loki"}, "expr": "{service_name=\"frontend\", environment=~\"$environment\", level=\"error\"}", "refId": "A"}],
+      "title": "Recent frontend errors",
+      "type": "logs"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["netra", "rum", "nextjs"],
+  "templating": {
+    "list": [
+      {"current": {"text": "All", "value": "$__all"}, "datasource": {"type": "prometheus", "uid": "netra-prometheus"}, "definition": "label_values(up, environment)", "hide": 0, "includeAll": true, "label": "environment", "multi": false, "name": "environment", "options": [], "query": {"qryType": 1, "query": "label_values(up, environment)", "refId": "PrometheusVariableQueryEditor-VariableQuery"}, "refresh": 1, "regex": "", "skipUrlSync": false, "sort": 1, "type": "query"}
+    ]
+  },
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "",
+  "title": "Netra / RUM / Next.js",
+  "uid": "netra-nextjs-rum",
+  "version": 1,
+  "weekStart": ""
+}

@@ -1,0 +1,281 @@
+# kube-prometheus-stack Helm values for Netra.
+#
+# Helm release: netra-kps
+# Namespace:    observability
+# Chart:        prometheus-community/kube-prometheus-stack 86.1.0
+#
+# This stack ships Prometheus, Alertmanager, Grafana, node-exporter,
+# kube-state-metrics, and the Prometheus Operator. It is the single
+# metrics + dashboards plane for dev, stage, and prod.
+#
+# Retention: 15d (metrics).
+# Storage:   SSD PVC for Prometheus.
+
+fullnameOverride: netra-kps
+
+# Cluster + environment labels are added by external_labels on Prometheus
+# below so every metric carries env/cluster context.
+
+defaultRules:
+  create: true
+  rules:
+    # We ship our own PrometheusRules under manifests/prometheus/prometheusrules/.
+    # Keep the chart's built-in rules for Kubernetes/etcd basics.
+    etcd: true
+    kubernetesApps: true
+    kubernetesResources: true
+    kubernetesStorage: true
+    kubernetesSystem: true
+    kubeStateMetrics: true
+    nodeExporterAlerting: true
+    nodeExporterRecording: true
+    prometheus: true
+    prometheusOperator: true
+    # Off by default to avoid double-alerting once our rules are loaded.
+    general: false
+
+# -----------------------------------------------------------------------------
+# Prometheus
+# -----------------------------------------------------------------------------
+prometheus:
+  prometheusSpec:
+    retention: 15d
+    retentionSize: ""        # PVC size governs; leave size-based retention off.
+    scrapeInterval: 30s
+    evaluationInterval: 30s
+
+    # Pick up ServiceMonitor / PodMonitor / PrometheusRule resources across
+    # every namespace so app teams can declare scrape targets in their own ns.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorNamespaceSelector: {}
+    serviceMonitorSelector: {}
+    podMonitorSelectorNilUsesHelmValues: false
+    podMonitorNamespaceSelector: {}
+    podMonitorSelector: {}
+    ruleSelectorNilUsesHelmValues: false
+    ruleNamespaceSelector: {}
+    ruleSelector: {}
+    probeSelectorNilUsesHelmValues: false
+    probeNamespaceSelector: {}
+    probeSelector: {}
+
+    # Every metric carries env + cluster as external labels.
+    externalLabels:
+      cluster: REPLACE_ME_CLUSTER_NAME
+      environment: REPLACE_ME_ENVIRONMENT   # dev | stage | prod
+
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: REPLACE_ME_SSD_STORAGECLASS
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 100Gi
+
+    resources:
+      requests:
+        cpu: 500m
+        memory: 2Gi
+      limits:
+        cpu: 2
+        memory: 8Gi
+
+    nodeSelector:
+      workload: observability
+    tolerations:
+      - key: workload
+        operator: Equal
+        value: observability
+        effect: NoSchedule
+
+  service:
+    type: ClusterIP             # Never expose Prometheus publicly.
+
+  ingress:
+    enabled: false
+
+# -----------------------------------------------------------------------------
+# Alertmanager
+# -----------------------------------------------------------------------------
+alertmanager:
+  enabled: true
+  alertmanagerSpec:
+    retention: 120h
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: REPLACE_ME_SSD_STORAGECLASS
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 512Mi
+    nodeSelector:
+      workload: observability
+    tolerations:
+      - key: workload
+        operator: Equal
+        value: observability
+        effect: NoSchedule
+
+  config:
+    # Minimal placeholder routing. Real receivers go in a separate
+    # Alertmanager Secret managed outside this chart so PagerDuty/Slack
+    # tokens never live in Git.
+    route:
+      receiver: "null"
+      group_by: ["alertname", "environment", "service"]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      routes:
+        - matchers:
+            - severity = "critical"
+          receiver: "null"
+        - matchers:
+            - severity = "warning"
+          receiver: "null"
+    receivers:
+      - name: "null"
+
+  service:
+    type: ClusterIP
+  ingress:
+    enabled: false
+
+# -----------------------------------------------------------------------------
+# Grafana
+# -----------------------------------------------------------------------------
+grafana:
+  enabled: true
+
+  # Admin password sourced from a pre-created Secret. Do not put the
+  # password in this file.
+  admin:
+    existingSecret: REPLACE_ME_GRAFANA_ADMIN_SECRET
+    userKey: admin-user
+    passwordKey: admin-password
+
+  defaultDashboardsEnabled: true
+
+  # Sidecars: load dashboards + datasources from ConfigMaps so everything
+  # is Git-owned.
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      searchNamespace: ALL
+      folderAnnotation: grafana_folder
+      provider:
+        foldersFromFilesStructure: true
+    datasources:
+      enabled: true
+      label: grafana_datasource
+      labelValue: "1"
+      searchNamespace: ALL
+
+  # Datasources are also shipped as a ConfigMap under
+  # manifests/grafana/datasources-configmap.yaml. Disable the chart's own
+  # built-in datasources block.
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources: []
+
+  grafana.ini:
+    server:
+      root_url: "%(protocol)s://%(domain)s/"
+    auth:
+      disable_login_form: false
+    auth.anonymous:
+      enabled: false
+    security:
+      cookie_secure: true
+    users:
+      default_theme: dark
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+
+  nodeSelector:
+    workload: observability
+  tolerations:
+    - key: workload
+      operator: Equal
+      value: observability
+      effect: NoSchedule
+
+  service:
+    type: ClusterIP             # Use port-forward, ingress with auth, or
+                                # a private LB — never public by default.
+  ingress:
+    enabled: false
+
+  persistence:
+    enabled: true
+    type: pvc
+    storageClassName: REPLACE_ME_SSD_STORAGECLASS
+    size: 10Gi
+    accessModes: ["ReadWriteOnce"]
+
+# -----------------------------------------------------------------------------
+# Operators / exporters
+# -----------------------------------------------------------------------------
+prometheusOperator:
+  nodeSelector:
+    workload: observability
+  tolerations:
+    - key: workload
+      operator: Equal
+      value: observability
+      effect: NoSchedule
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 512Mi
+
+# node-exporter runs on every node so we get node metrics from app pools too.
+nodeExporter:
+  enabled: true
+prometheus-node-exporter:
+  tolerations:
+    - operator: Exists           # DaemonSet on all nodes.
+  resources:
+    requests:
+      cpu: 20m
+      memory: 32Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+kube-state-metrics:
+  nodeSelector:
+    workload: observability
+  tolerations:
+    - key: workload
+      operator: Equal
+      value: observability
+      effect: NoSchedule
+  resources:
+    requests:
+      cpu: 20m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi

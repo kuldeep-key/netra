@@ -1,0 +1,103 @@
+---
+# Node and platform-level alerts.
+#
+# `environment`, `cluster`, and the rest of Prometheus external_labels
+# are injected by Prometheus at alert-evaluation time, so every alert
+# leaving this file is environment-aware automatically. The labels block
+# below only carries fields the rule itself owns: severity, service, team.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: netra-node-alerts
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: netra
+    release: netra-kps
+spec:
+  groups:
+    - name: netra.node
+      interval: 30s
+      rules:
+        - alert: NodeNotReady
+          expr: |
+            kube_node_status_condition{condition="Ready",status="true"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            service: kubernetes-node
+            team: platform
+          annotations:
+            summary: "Node {{ $labels.node }} is NotReady ({{ $labels.environment }})"
+            description: "Node {{ $labels.node }} has been NotReady for more than 5 minutes."
+            dashboard_url: "https://REPLACE_ME_GRAFANA_HOST/d/netra-kubernetes"
+            runbook_url:   "https://REPLACE_ME_REPO_URL/blob/main/runbooks/node-not-ready.md"
+
+        - alert: NodeDiskPressure
+          expr: |
+            kube_node_status_condition{condition="DiskPressure",status="true"} == 1
+          for: 5m
+          labels:
+            severity: warning
+            service: kubernetes-node
+            team: platform
+          annotations:
+            summary: "DiskPressure on node {{ $labels.node }} ({{ $labels.environment }})"
+            description: "Node {{ $labels.node }} reports DiskPressure for more than 5 minutes."
+            dashboard_url: "https://REPLACE_ME_GRAFANA_HOST/d/netra-kubernetes"
+            runbook_url:   "https://REPLACE_ME_REPO_URL/blob/main/runbooks/node-disk-pressure.md"
+
+        - alert: NodeMemoryPressure
+          expr: |
+            kube_node_status_condition{condition="MemoryPressure",status="true"} == 1
+          for: 5m
+          labels:
+            severity: warning
+            service: kubernetes-node
+            team: platform
+          annotations:
+            summary: "MemoryPressure on node {{ $labels.node }} ({{ $labels.environment }})"
+            description: "Node {{ $labels.node }} reports MemoryPressure for more than 5 minutes."
+            dashboard_url: "https://REPLACE_ME_GRAFANA_HOST/d/netra-kubernetes"
+            runbook_url:   "https://REPLACE_ME_REPO_URL/blob/main/runbooks/node-not-ready.md"
+
+        - alert: PodCrashLooping
+          expr: |
+            increase(kube_pod_container_status_restarts_total[15m]) > 5
+          for: 10m
+          labels:
+            severity: warning
+            service: kubernetes-pod
+            team: platform
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} crashlooping ({{ $labels.environment }})"
+            description: "Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} restarted more than 5 times in the last 15m."
+            dashboard_url: "https://REPLACE_ME_GRAFANA_HOST/d/netra-kubernetes"
+            runbook_url:   "https://REPLACE_ME_REPO_URL/blob/main/runbooks/pod-crashlooping.md"
+
+        - alert: PodOOMKilled
+          expr: |
+            increase(kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}[15m]) > 0
+          for: 1m
+          labels:
+            severity: warning
+            service: kubernetes-pod
+            team: platform
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} was OOMKilled ({{ $labels.environment }})"
+            description: "Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} was OOMKilled in the last 15m."
+            dashboard_url: "https://REPLACE_ME_GRAFANA_HOST/d/netra-kubernetes"
+            runbook_url:   "https://REPLACE_ME_REPO_URL/blob/main/runbooks/pod-crashlooping.md"
+
+        - alert: PrometheusTargetDown
+          expr: |
+            up == 0
+          for: 5m
+          labels:
+            severity: warning
+            service: '{{ $labels.job }}'
+            team: platform
+          annotations:
+            summary: "Prometheus target down: {{ $labels.job }} ({{ $labels.environment }})"
+            description: "Target {{ $labels.instance }} for job {{ $labels.job }} has been down for more than 5 minutes."
+            dashboard_url: "https://REPLACE_ME_GRAFANA_HOST/d/netra-prometheus-health"
+            runbook_url:   "https://REPLACE_ME_REPO_URL/blob/main/runbooks/pod-crashlooping.md"

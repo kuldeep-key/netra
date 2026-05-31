@@ -1,0 +1,81 @@
+---
+# Alerts for the Netra observability stack itself.
+#
+# If Netra is the only signal source you'll notice these break first.
+# Keep them loud.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: netra-observability-stack-alerts
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: netra
+    release: netra-kps
+spec:
+  groups:
+    - name: netra.observability-stack
+      interval: 30s
+      rules:
+        - alert: LokiIngestionErrors
+          expr: |
+            sum by (namespace, pod) (
+              rate(loki_request_duration_seconds_count{status_code=~"5..", route=~".*push.*"}[5m])
+            ) > 0
+          for: 10m
+          labels:
+            severity: critical
+            service: loki
+            team: platform
+          annotations:
+            summary: "Loki ingestion errors ({{ $labels.environment }})"
+            description: "Loki push handler is returning 5xx errors in {{ $labels.environment }} for 10m."
+            dashboard_url: "https://REPLACE_ME_GRAFANA_HOST/d/netra-loki-health"
+            runbook_url:   "https://REPLACE_ME_REPO_URL/blob/main/runbooks/loki-ingestion-errors.md"
+
+        - alert: TempoIngestionErrors
+          expr: |
+            sum by (namespace, pod) (
+              rate(tempo_request_duration_seconds_count{status_code=~"5..", route=~".*push.*|.*ingest.*"}[5m])
+            ) > 0
+          for: 10m
+          labels:
+            severity: critical
+            service: tempo
+            team: platform
+          annotations:
+            summary: "Tempo ingestion errors ({{ $labels.environment }})"
+            description: "Tempo ingest path is returning 5xx errors in {{ $labels.environment }} for 10m."
+            dashboard_url: "https://REPLACE_ME_GRAFANA_HOST/d/netra-tempo-health"
+            runbook_url:   "https://REPLACE_ME_REPO_URL/blob/main/runbooks/tempo-ingestion-errors.md"
+
+        - alert: AlloyDown
+          expr: |
+            up{job=~".*alloy.*"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            service: alloy
+            team: platform
+          annotations:
+            summary: "Alloy target down: {{ $labels.instance }} ({{ $labels.environment }})"
+            description: "Alloy collector {{ $labels.instance }} has been down for more than 5 minutes — logs and RUM are not being shipped."
+            dashboard_url: "https://REPLACE_ME_GRAFANA_HOST/d/netra-alloy-health"
+            runbook_url:   "https://REPLACE_ME_REPO_URL/blob/main/runbooks/loki-ingestion-errors.md"
+
+        - alert: PrometheusStorageHigh
+          expr: |
+            (
+              prometheus_tsdb_storage_blocks_bytes
+              /
+              on(instance, pod) kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*prometheus.*"}
+            ) > 0.8
+          for: 30m
+          labels:
+            severity: warning
+            service: prometheus
+            team: platform
+          annotations:
+            summary: "Prometheus storage > 80% ({{ $labels.environment }})"
+            description: "Prometheus on {{ $labels.instance }} is using more than 80% of its PVC for more than 30m."
+            dashboard_url: "https://REPLACE_ME_GRAFANA_HOST/d/netra-prometheus-health"
+            runbook_url:   "https://REPLACE_ME_REPO_URL/blob/main/runbooks/loki-ingestion-errors.md"

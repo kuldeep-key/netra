@@ -1,0 +1,50 @@
+---
+# Netra node-scheduling reference.
+#
+# Convention:
+#   * Dedicated node/pool labelled  workload=observability
+#   * Tainted with                  workload=observability:NoSchedule
+#
+# Components scheduled on that pool (via nodeSelector + tolerations in
+# each Helm values file):
+#   - Grafana
+#   - Prometheus / Alertmanager / Prometheus Operator / kube-state-metrics
+#   - Loki
+#   - Tempo
+#   - OpenTelemetry Collector
+#   - blackbox_exporter
+#
+# Components that must run on every node:
+#   - Alloy        (DaemonSet, tolerations: Exists)
+#   - node-exporter (DaemonSet, tolerations: Exists)
+#
+# Operator commands to prepare a node:
+#   kubectl label  node <NODE> workload=observability --overwrite
+#   kubectl taint  node <NODE> workload=observability:NoSchedule --overwrite
+#
+# Dedicated observability nodes provide isolation, not HA. Real HA needs
+# >= 3 observability nodes plus replicated/stateless components — out of
+# scope for this scaffold.
+#
+# This ConfigMap is informational. Helm values files own the actual
+# nodeSelector / tolerations used by the workloads.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: netra-node-scheduling-reference
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: netra
+data:
+  nodeSelector.yaml: |
+    nodeSelector:
+      workload: observability
+  tolerations.yaml: |
+    tolerations:
+      - key: workload
+        operator: Equal
+        value: observability
+        effect: NoSchedule
+  README.md: |
+    See manifests/node-scheduling.yaml header for the full convention.
+    Edit Helm values files, not this ConfigMap, to change scheduling.

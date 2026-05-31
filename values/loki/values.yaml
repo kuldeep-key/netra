@@ -1,0 +1,123 @@
+# Loki Helm values for Netra.
+#
+# Helm release: netra-loki
+# Namespace:    observability
+# Chart:        grafana-community/loki 17.x (Monolithic mode)
+#
+# Logs are pushed by Grafana Alloy. Promtail is intentionally not used.
+# Storage is Google Cloud Storage (GCS). Filesystem storage is NOT
+# acceptable for any non-trivial environment.
+#
+# GCS auth uses GKE Workload Identity (serviceAccount.annotations below) —
+# no static keys, no mounted credentials Secret.
+#
+# Retention: 15d.
+
+fullnameOverride: netra-loki
+
+deploymentMode: Monolithic
+
+loki:
+  auth_enabled: false           # Single-tenant; multi-tenancy is out of scope.
+
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        store: tsdb
+        object_store: gcs
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+
+  storage:
+    type: gcs
+    bucketNames:
+      chunks: REPLACE_ME_LOKI_GCS_BUCKET
+      ruler:  REPLACE_ME_LOKI_GCS_BUCKET
+      admin:  REPLACE_ME_LOKI_GCS_BUCKET
+    gcs:
+      chunkBufferSize: 0
+      requestTimeout: "0s"
+      enableHttp2: true
+      # Auth: GKE Workload Identity via serviceAccount.annotations below.
+      # The GCS client uses Application Default Credentials — no keys here.
+
+  limits_config:
+    retention_period: 360h      # 15d
+    reject_old_samples: true
+    reject_old_samples_max_age: 168h
+    ingestion_rate_mb: 16
+    ingestion_burst_size_mb: 24
+    max_global_streams_per_user: 25000
+    max_label_name_length: 1024
+    max_label_value_length: 4096
+    max_label_names_per_series: 30
+
+  compactor:
+    retention_enabled: true
+    delete_request_store: gcs
+    retention_delete_delay: 2h
+    compaction_interval: 10m
+
+  commonConfig:
+    replication_factor: 1       # Single-binary; raise with backend split.
+
+  # Every stream Alloy writes already carries environment/cluster/team
+  # labels. structured_metadata keeps high-cardinality fields out of labels.
+  structuredConfig:
+    limits_config:
+      allow_structured_metadata: true
+      volume_enabled: true
+
+singleBinary:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 200m
+      memory: 1Gi
+    limits:
+      cpu: 2
+      memory: 4Gi
+  persistence:
+    enabled: true
+    storageClass: REPLACE_ME_SSD_STORAGECLASS
+    size: 20Gi                  # Local WAL/cache only; bulk data is in GCS.
+  nodeSelector:
+    workload: observability
+  tolerations:
+    - key: workload
+      operator: Equal
+      value: observability
+      effect: NoSchedule
+
+# GCS access via GKE Workload Identity. Bind this KSA to a GSA that has
+# roles/storage.objectAdmin on the Loki bucket. No static keys, no Secret.
+serviceAccount:
+  create: true
+  annotations:
+    iam.gke.io/gcp-service-account: REPLACE_ME_LOKI_GCP_SERVICE_ACCOUNT
+
+# Disable other deployment modes.
+read:
+  replicas: 0
+write:
+  replicas: 0
+backend:
+  replicas: 0
+gateway:
+  enabled: false                # No public gateway; cluster-internal only.
+
+# We do not use the chart's bundled monitoring; metrics are scraped via the
+# ServiceMonitor created by the chart.
+monitoring:
+  selfMonitoring:
+    enabled: false
+    grafanaAgent:
+      installOperator: false
+  lokiCanary:
+    enabled: false
+
+# We use Alloy for log shipping. Promtail must stay off.
+test:
+  enabled: false

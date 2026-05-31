@@ -1,0 +1,83 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "netra-prometheus"},
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "id": 1,
+      "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+      "targets": [{"datasource": {"type": "prometheus", "uid": "netra-prometheus"}, "expr": "sum(rate(worker_jobs_processed_total{service=~\"$service\", environment=~\"$environment\"}[5m]))", "refId": "A"}],
+      "title": "Throughput (jobs/s)",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "netra-prometheus"},
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "id": 2,
+      "fieldConfig": {"defaults": {"unit": "percentunit"}},
+      "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+      "targets": [{"datasource": {"type": "prometheus", "uid": "netra-prometheus"}, "expr": "sum(rate(worker_jobs_total{status=\"failed\", service=~\"$service\", environment=~\"$environment\"}[15m])) / sum(rate(worker_jobs_total{service=~\"$service\", environment=~\"$environment\"}[15m]))", "refId": "A"}],
+      "title": "Failure rate",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "netra-prometheus"},
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+      "id": 3,
+      "fieldConfig": {"defaults": {"unit": "s"}},
+      "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+      "targets": [{"datasource": {"type": "prometheus", "uid": "netra-prometheus"}, "expr": "max(worker_queue_oldest_job_age_seconds{service=~\"$service\", environment=~\"$environment\"})", "refId": "A"}],
+      "title": "Oldest queued job age",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "netra-prometheus"},
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+      "id": 4,
+      "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+      "targets": [{"datasource": {"type": "prometheus", "uid": "netra-prometheus"}, "expr": "sum(rate(worker_jobs_retried_total{service=~\"$service\", environment=~\"$environment\"}[5m]))", "refId": "A"}],
+      "title": "Retries/s",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "netra-prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "id": 5,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [{"datasource": {"type": "prometheus", "uid": "netra-prometheus"}, "expr": "sum by (queue) (rate(worker_jobs_processed_total{service=~\"$service\", environment=~\"$environment\"}[5m]))", "refId": "A", "legendFormat": "{{queue}}"}],
+      "title": "Throughput by queue",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "netra-prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "id": 6,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [{"datasource": {"type": "prometheus", "uid": "netra-prometheus"}, "expr": "sum by (status) (rate(worker_jobs_total{service=~\"$service\", environment=~\"$environment\"}[5m]))", "refId": "A", "legendFormat": "{{status}}"}],
+      "title": "Jobs by status",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["netra", "services", "python-worker"],
+  "templating": {
+    "list": [
+      {"current": {"text": "All", "value": "$__all"}, "datasource": {"type": "prometheus", "uid": "netra-prometheus"}, "definition": "label_values(up, environment)", "hide": 0, "includeAll": true, "label": "environment", "multi": false, "name": "environment", "options": [], "query": {"qryType": 1, "query": "label_values(up, environment)", "refId": "PrometheusVariableQueryEditor-VariableQuery"}, "refresh": 1, "regex": "", "skipUrlSync": false, "sort": 1, "type": "query"},
+      {"current": {"text": "All", "value": "$__all"}, "datasource": {"type": "prometheus", "uid": "netra-prometheus"}, "definition": "label_values(worker_jobs_total{environment=~\"$environment\"}, service)", "hide": 0, "includeAll": true, "label": "service", "multi": true, "name": "service", "options": [], "query": {"qryType": 1, "query": "label_values(worker_jobs_total{environment=~\"$environment\"}, service)", "refId": "PrometheusVariableQueryEditor-VariableQuery"}, "refresh": 1, "regex": "", "skipUrlSync": false, "sort": 1, "type": "query"}
+    ]
+  },
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "",
+  "title": "Netra / Services / Python Workers",
+  "uid": "netra-python-workers",
+  "version": 1,
+  "weekStart": ""
+}

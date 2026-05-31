@@ -1,0 +1,68 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "netra-prometheus"},
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "id": 1,
+      "fieldConfig": {"defaults": {"unit": "bytes"}},
+      "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+      "targets": [{"datasource": {"type": "prometheus", "uid": "netra-prometheus"}, "expr": "prometheus_tsdb_storage_blocks_bytes", "refId": "A"}],
+      "title": "TSDB block bytes",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "netra-prometheus"},
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "id": 2,
+      "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+      "targets": [{"datasource": {"type": "prometheus", "uid": "netra-prometheus"}, "expr": "prometheus_tsdb_head_series", "refId": "A"}],
+      "title": "Active series",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "netra-prometheus"},
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+      "id": 3,
+      "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+      "targets": [{"datasource": {"type": "prometheus", "uid": "netra-prometheus"}, "expr": "sum(scrape_samples_scraped)", "refId": "A"}],
+      "title": "Samples scraped",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "netra-prometheus"},
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+      "id": 4,
+      "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+      "targets": [{"datasource": {"type": "prometheus", "uid": "netra-prometheus"}, "expr": "sum(up == 0)", "refId": "A"}],
+      "title": "Down targets",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "netra-prometheus"},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 4},
+      "id": 5,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [{"datasource": {"type": "prometheus", "uid": "netra-prometheus"}, "expr": "rate(prometheus_tsdb_head_samples_appended_total[5m])", "refId": "A"}],
+      "title": "Samples appended/s",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["netra", "platform", "prometheus"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "",
+  "title": "Netra / Platform / Prometheus health",
+  "uid": "netra-prometheus-health",
+  "version": 1,
+  "weekStart": ""
+}

@@ -1,0 +1,16 @@
+---
+# Netra observability namespace.
+#
+# Every Netra Helm release installs here. App services live in their own
+# namespaces and are scraped via ServiceMonitors picked up by the
+# Prometheus Operator from any namespace.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: observability
+  labels:
+    name: observability
+    app.kubernetes.io/part-of: netra
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted

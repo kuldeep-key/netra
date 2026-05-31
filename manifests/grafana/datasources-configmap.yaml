@@ -1,0 +1,71 @@
+---
+# Grafana datasources, picked up by the Grafana datasource sidecar
+# (label grafana_datasource=1, see kube-prometheus-stack values).
+#
+# Endpoints are cluster-internal Services. Nothing here gets exposed
+# publicly. URLs assume the standard Helm release names listed at the
+# top of each values file.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: netra-grafana-datasources
+  namespace: observability
+  labels:
+    grafana_datasource: "1"
+    app.kubernetes.io/part-of: netra
+data:
+  netra-datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        uid: netra-prometheus
+        url: http://netra-kps-prometheus.observability.svc.cluster.local:9090
+        isDefault: true
+        jsonData:
+          timeInterval: 30s
+          httpMethod: POST
+          exemplarTraceIdDestinations:
+            - name: trace_id
+              datasourceUid: netra-tempo
+
+      - name: Loki
+        type: loki
+        access: proxy
+        uid: netra-loki
+        url: http://netra-loki.observability.svc.cluster.local:3100
+        jsonData:
+          maxLines: 1000
+          derivedFields:
+            - name: trace_id
+              matcherRegex: "trace_id=([A-Za-z0-9]+)"
+              url: "$${__value.raw}"
+              datasourceUid: netra-tempo
+
+      - name: Tempo
+        type: tempo
+        access: proxy
+        uid: netra-tempo
+        url: http://netra-tempo.observability.svc.cluster.local:3200
+        jsonData:
+          tracesToLogsV2:
+            datasourceUid: netra-loki
+            spanStartTimeShift: -1m
+            spanEndTimeShift:   1m
+            tags:
+              - key: service.name
+                value: service_name
+          serviceMap:
+            datasourceUid: netra-prometheus
+          nodeGraph:
+            enabled: true
+
+      - name: Alertmanager
+        type: alertmanager
+        access: proxy
+        uid: netra-alertmanager
+        url: http://netra-kps-alertmanager.observability.svc.cluster.local:9093
+        jsonData:
+          implementation: prometheus
+          handleGrafanaManagedAlerts: false

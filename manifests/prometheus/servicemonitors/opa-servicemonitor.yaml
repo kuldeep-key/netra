@@ -1,0 +1,36 @@
+---
+# Placeholder ServiceMonitor for OPA.
+#
+# Expects OPA exposing Prometheus metrics on a Service port named
+# "http-metrics" (default OPA path is /metrics). Any service deploying OPA
+# provides this Service per the contract (docs/app-integration.md).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: netra-opa
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: netra
+    release: netra-kps
+spec:
+  namespaceSelector:
+    any: true
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opa
+  endpoints:
+    - port: http-metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      relabelings:
+        - targetLabel: service
+          replacement: opa
+        - sourceLabels: [__meta_kubernetes_pod_label_team]
+          targetLabel: team
+        - sourceLabels: [__meta_kubernetes_pod_label_environment]
+          targetLabel: environment
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace
+        - sourceLabels: [__meta_kubernetes_pod_name]
+          targetLabel: pod

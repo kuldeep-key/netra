@@ -1,0 +1,46 @@
+---
+# Blackbox alerts.
+#
+# probe_success / probe_duration_seconds are emitted by blackbox_exporter
+# for every Probe CRD. `service`, `probe_kind`, and `team` are added by
+# the Probe target labels (see blackbox-servicemonitor.yaml).
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: netra-blackbox-alerts
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: netra
+    release: netra-kps
+spec:
+  groups:
+    - name: netra.blackbox
+      interval: 30s
+      rules:
+        - alert: BlackboxEndpointDown
+          expr: |
+            probe_success == 0
+          for: 5m
+          labels:
+            severity: critical
+            service: '{{ $labels.service }}'
+            team: '{{ $labels.team }}'
+          annotations:
+            summary: "Endpoint down: {{ $labels.instance }} ({{ $labels.environment }})"
+            description: "Probe {{ $labels.instance }} for {{ $labels.service }} ({{ $labels.probe_kind }}) has failed for more than 5 minutes."
+            dashboard_url: "https://REPLACE_ME_GRAFANA_HOST/d/netra-blackbox-health"
+            runbook_url:   "https://REPLACE_ME_REPO_URL/blob/main/runbooks/blackbox-endpoint-down.md"
+
+        - alert: BlackboxHighLatency
+          expr: |
+            probe_duration_seconds > 2
+          for: 10m
+          labels:
+            severity: warning
+            service: '{{ $labels.service }}'
+            team: '{{ $labels.team }}'
+          annotations:
+            summary: "Endpoint latency > 2s: {{ $labels.instance }} ({{ $labels.environment }})"
+            description: "Probe {{ $labels.instance }} for {{ $labels.service }} has been slower than 2s for 10m."
+            dashboard_url: "https://REPLACE_ME_GRAFANA_HOST/d/netra-blackbox-health"
+            runbook_url:   "https://REPLACE_ME_REPO_URL/blob/main/runbooks/blackbox-endpoint-down.md"

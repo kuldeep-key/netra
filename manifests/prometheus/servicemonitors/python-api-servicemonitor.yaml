@@ -1,0 +1,43 @@
+---
+# Placeholder ServiceMonitor for Python API services.
+#
+# Conforming Services expose /metrics on port "http-metrics" and carry:
+#   Service metadata: app.kubernetes.io/component: api  (scrape class)
+#   Pod labels:       app.kubernetes.io/name, team, environment
+# See docs/app-integration.md — scrape class lives on the Service, not pods.
+#
+# Generic: matches any conforming service (see docs/app-integration.md).
+# Scrapes the moment a workload exposes /metrics with the labels above.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: netra-python-api
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: netra
+    release: netra-kps
+spec:
+  namespaceSelector:
+    any: true                   # Scrape across dev / stage / prod ns.
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: api
+  endpoints:
+    - port: http-metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      honorLabels: false
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+          targetLabel: service
+        - sourceLabels: [__meta_kubernetes_pod_label_team]
+          targetLabel: team
+        - sourceLabels: [__meta_kubernetes_pod_label_environment]
+          targetLabel: environment
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace
+        - sourceLabels: [__meta_kubernetes_pod_name]
+          targetLabel: pod
+        - sourceLabels: [__meta_kubernetes_service_label_app_kubernetes_io_component]
+          targetLabel: scrape_class

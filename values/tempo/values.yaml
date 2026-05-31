@@ -1,0 +1,77 @@
+# Tempo Helm values for Netra.
+#
+# Helm release: netra-tempo
+# Namespace:    observability
+# Chart:        grafana-community/tempo 2.x (single-binary StatefulSet)
+#
+# Tempo ingests OTLP from the OpenTelemetry Collector and stores traces
+# in Google Cloud Storage (GCS). GCS auth uses GKE Workload Identity
+# (serviceAccount.annotations below) — no static keys, no mounted Secret.
+#
+# Retention: 7d by default. Raise `tempo.retention` to 360h (15d) per
+# platform policy; the chart drives the compactor block_retention from it.
+
+fullnameOverride: netra-tempo
+
+tempo:
+  retention: 168h               # 7d. Raise to 360h for 15d.
+  metricsGenerator:
+    enabled: false              # Out of scope for this scaffold.
+
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 2
+      memory: 4Gi
+
+  storage:
+    trace:
+      backend: gcs
+      gcs:
+        bucket_name:       REPLACE_ME_TEMPO_GCS_BUCKET
+        chunk_buffer_size: 10485760   # 10 MiB
+        # Auth: GKE Workload Identity via serviceAccount.annotations below.
+        # The GCS client uses Application Default Credentials — no keys here.
+
+  # OTLP receivers. App services and the OTel Collector both push here.
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+
+  overrides:
+    defaults:
+      ingestion:
+        rate_limit_bytes: 20000000
+        burst_size_bytes: 30000000
+
+persistence:
+  enabled: true
+  storageClassName: REPLACE_ME_SSD_STORAGECLASS
+  size: 20Gi                    # WAL only; bulk data is in GCS.
+
+nodeSelector:
+  workload: observability
+tolerations:
+  - key: workload
+    operator: Equal
+    value: observability
+    effect: NoSchedule
+
+service:
+  type: ClusterIP
+
+# GCS access via GKE Workload Identity. Bind this KSA to a GSA that has
+# roles/storage.objectAdmin on the Tempo bucket. No static keys, no Secret.
+serviceAccount:
+  create: true
+  annotations:
+    iam.gke.io/gcp-service-account: REPLACE_ME_TEMPO_GCP_SERVICE_ACCOUNT
+
+serviceMonitor:
+  enabled: true

@@ -1,0 +1,64 @@
+# prometheus-blackbox-exporter Helm values for Netra.
+#
+# Helm release: netra-blackbox
+# Namespace:    observability
+# Chart:        prometheus-community/prometheus-blackbox-exporter 11.9.1
+#
+# Blackbox runs synthetic HTTP/TCP probes from inside the cluster. Probe
+# targets live in manifests/blackbox/probes-configmap.yaml and in the
+# blackbox ServiceMonitor under manifests/prometheus/servicemonitors/.
+
+fullnameOverride: netra-blackbox
+
+replicas: 2
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+nodeSelector:
+  workload: observability
+tolerations:
+  - key: workload
+    operator: Equal
+    value: observability
+    effect: NoSchedule
+
+service:
+  type: ClusterIP
+
+# Modules describe how to probe. Real probe targets are NOT defined here —
+# they are passed by Prometheus via the `target` URL parameter on each
+# scrape (see the blackbox ServiceMonitor under manifests/).
+config:
+  modules:
+    http_2xx:
+      prober: http
+      timeout: 5s
+      http:
+        valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+        valid_status_codes: [200, 201, 204]
+        method: GET
+        follow_redirects: true
+        preferred_ip_protocol: ip4
+    http_ready:
+      prober: http
+      timeout: 5s
+      http:
+        valid_status_codes: [200]
+        method: GET
+        fail_if_body_not_matches_regexp: ["ok|ready|true"]
+        preferred_ip_protocol: ip4
+    tcp_connect:
+      prober: tcp
+      timeout: 5s
+
+serviceMonitor:
+  enabled: false                # We use a dedicated probe ServiceMonitor.
+
+# Optional: Probe CRD definitions can be added under
+# manifests/prometheus/servicemonitors/blackbox-servicemonitor.yaml.
