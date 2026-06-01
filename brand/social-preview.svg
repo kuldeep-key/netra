@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" role="img" aria-label="Netra - Observability you own">
+  <rect width="1280" height="640" fill="#0B0D12"/>
+  <g transform="translate(120 220)">
+    <path fill="#FFFFFF" d="M4.5 42V6h9.8l16.8 23.1V6h9.4v36h-9.2L14.1 18.9V42H4.5z"/>
+    <circle cx="37.5" cy="9.5" r="5.2" fill="#0057FF"/>
+    <text x="56" y="35" fill="#FFFFFF" font-family="Inter, system-ui, -apple-system, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="-0.02em">Netra</text>
+  </g>
+  <text x="120" y="340" fill="#F7F8FC" font-family="Inter, system-ui, -apple-system, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="48" font-weight="600" letter-spacing="-0.02em">Observability you own.</text>
+  <text x="120" y="400" fill="#0057FF" font-family="Inter, system-ui, -apple-system, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="28" font-weight="500">Vision for your infrastructure — clarity across Kubernetes chaos.</text>
+</svg>

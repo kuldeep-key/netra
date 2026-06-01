@@ -43,6 +43,27 @@ do
   if [[ -s "$REPO_ROOT/$f" ]]; then ok "$f"; else fail "missing $f"; fi
 done
 
+# --- Brand assets -----------------------------------------------------
+section "brand/"
+for f in \
+  brand/README.md \
+  brand/netra-symbol.svg \
+  brand/netra-symbol-white.svg \
+  brand/netra-logo-horizontal.svg \
+  brand/netra-logo-horizontal-dark.svg \
+  brand/netra-logo-stacked.svg \
+  brand/netra-logo-stacked-dark.svg \
+  brand/netra-logo-horizontal.png \
+  brand/netra-logo-horizontal-dark.png \
+  brand/netra-logo-stacked.png \
+  brand/netra-logo-stacked-dark.png \
+  brand/netra-icon.png \
+  brand/favicon.png \
+  brand/social-preview.png
+do
+  if [[ -s "$REPO_ROOT/$f" ]]; then ok "$f"; else fail "missing $f"; fi
+done
+
 # --- Required manifests -----------------------------------------------
 section "manifests/"
 for f in \

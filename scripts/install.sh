@@ -228,6 +228,12 @@ if ! kubectl get secret -n "$NS" netra-grafana-admin >/dev/null 2>&1; then
   echo "  created secret netra-grafana-admin (password is random — retrieve from the cluster)"
 fi
 
+say "Applying Grafana branding ConfigMap"
+kubectl create configmap netra-grafana-branding \
+  --namespace "$NS" \
+  --from-file=grafana_icon.svg="$REPO_ROOT/brand/netra-symbol-white.svg" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
 # -------------------------------------------------------------------------
 # 3. Helm releases
 # -------------------------------------------------------------------------

@@ -1,6 +1,4 @@
-<div align="center">
-
-# Netra · नेत्र
+![Netra · नेत्र](brand/netra-logo-horizontal.png)
 
 ### Observability you own.
 
@@ -10,8 +8,6 @@
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-GKE%20%7C%20any%20serious%20K8s-F7F8FC?style=flat-square&labelColor=0B0D12&color=0057FF)](docs/production-checklist.md)
 [![Signals](https://img.shields.io/badge/Signals-Metrics%20%7C%20Logs%20%7C%20Traces-2DBA4E?style=flat-square&labelColor=0B0D12)](docs/architecture.md)
 [![GitOps](https://img.shields.io/badge/Dashboards%20%26%20Alerts-Git--owned-F7F8FC?style=flat-square&labelColor=0B0D12&color=0057FF)](docs/dashboards-alerts-in-git.md)
-
-</div>
 
 ---
 
@@ -288,7 +284,16 @@ netra/
 
 ## Brand · Identity v2
 
-For logos, color tokens, and usage: [Netra Identity v2 — Design System & Brand Guidelines](https://claude.ai/public/artifacts/d5235d04-d586-4b07-bd7a-5d2707a61883)
+![Netra mark](brand/netra-logo-stacked.png)
+
+Assets live in [`brand/`](brand/). Full guidelines: [Netra Identity v2 — Design System & Brand Guidelines](https://claude.ai/public/artifacts/d5235d04-d586-4b07-bd7a-5d2707a61883)
+
+| Variant | Preview | Source |
+| --- | --- | --- |
+| Horizontal logo | ![Horizontal logo](brand/netra-logo-horizontal.png) | [`netra-logo-horizontal.svg`](brand/netra-logo-horizontal.svg) · [`netra-logo-horizontal.png`](brand/netra-logo-horizontal.png) |
+| App icon | ![App icon](brand/netra-icon.png) | [`netra-icon.svg`](brand/netra-icon.svg) · [`netra-icon.png`](brand/netra-icon.png) |
+| Favicon | ![Favicon](brand/favicon.png) | [`favicon.svg`](brand/favicon.svg) · [`favicon.png`](brand/favicon.png) |
+| Social preview | — | [`social-preview.png`](brand/social-preview.png) (upload to GitHub repo settings) |
 
 | Token | Hex | Use |
 | --- | --- | --- |
@@ -313,6 +318,8 @@ Before production: [production-checklist.md](docs/production-checklist.md). Befo
 We're building in the open because observability infrastructure belongs in the commons — composable, forkable, extensible.
 
 <div align="center">
+
+![Netra symbol](brand/netra-symbol.png)
 
 **See your whole cluster. Know which environment broke. Own the stack.**
 
